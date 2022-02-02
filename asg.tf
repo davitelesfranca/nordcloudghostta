@@ -22,7 +22,7 @@ resource "aws_launch_configuration" "nordcloud_lc" {
   iam_instance_profile = aws_iam_instance_profile.ec2_profile_east1.name
 
   # path to the user data file
-  user_data = templatefile("/home/dfranca-dev/aws-ghost-deployment-main/terraform/user_data/nordcloud_ghost_init.sh",
+  user_data = templatefile("./user_data/nordcloud_ghost_init.sh",
     {
       # This is pulled from the rds resource created in rds.tf
       "endpoint" = aws_db_instance.default.address,
