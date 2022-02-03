@@ -81,7 +81,6 @@ variable "mysql_username" {
 variable "mysql_password" {
   description = "MySQL password"
   type        = string
-  default     = "Mysql#123"
 }
 
 variable "mysql_parameter_group_name" {
@@ -112,18 +111,4 @@ variable "asg_min_size" {
   default     = 1
 }
 
-/*--------------------------------------------------------------------------------------------------
-  User data vars
---------------------------------------------------------------------------------------------------*/
 
-variable "website_url" {
-  description = "Your ghost website URL, has to match the origin (custom domain OR load balancer DNS Name)"
-  type        = string
-  default     = ""
-}
-
-variable "website_admin_url" {
-  description = "Your ghost website admin URL, has to match the origin (custom domain OR load balancer DNS Name). Can be a subdomain of website_url"
-  type        = string
-  default     = ""
-}
