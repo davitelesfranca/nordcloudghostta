@@ -5,7 +5,7 @@
 variable "region" {
   description = "Region where the resources will be deployed"
   type        = string
-  default     = "us-east-1"
+  default     = "us-east-2"
 }
 
 variable "tags" {
