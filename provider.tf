@@ -10,6 +10,8 @@ terraform {
     }
   }
 
+  #To allow Github Actions be able to runs it on Hashicorp cloud environment, 
+  # we need to define a organization and a workspace's organization
   cloud {
     organization = "davitelesfranca"
 
