@@ -24,7 +24,7 @@ resource "aws_iam_role" "ec2_role_east1" {
 EOF
 }
 
-resource "aws_iam_role_policy_attachment" "test-attach" {
+resource "aws_iam_role_policy_attachment" "attach_to_ssm" {
   role       = aws_iam_role.ec2_role_east1.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }

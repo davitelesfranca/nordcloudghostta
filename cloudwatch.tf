@@ -6,7 +6,7 @@ resource "aws_cloudwatch_metric_alarm" "ec2_cpu" {
   namespace                 = "AWS/EC2"
   period                    = "120" #seconds
   statistic                 = "Average"
-  threshold                 = "80"
+  threshold                 = "80" #porcentage
   alarm_description         = "This metric monitors ec2 cpu utilization"
   insufficient_data_actions = []
 
@@ -28,7 +28,7 @@ resource "aws_cloudwatch_metric_alarm" "ec2_cpu_down" {
   namespace                 = "AWS/EC2"
   period                    = "120" #seconds
   statistic                 = "Average"
-  threshold                 = "80"
+  threshold                 = "80" #porcentage
   alarm_description         = "This metric monitors ec2 cpu utilization"
   insufficient_data_actions = []
 
