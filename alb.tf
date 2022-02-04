@@ -11,6 +11,15 @@ resource "aws_security_group" "nordcloud_aelb_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # Accept https traffic from the internet
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Allowing outcome traffic to anywhere
   egress {
     from_port   = 0
     to_port     = 0

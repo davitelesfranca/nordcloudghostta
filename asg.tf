@@ -28,7 +28,8 @@ resource "aws_launch_configuration" "nordcloud_lc" {
       "endpoint" = aws_db_instance.default.address,
       "database" = aws_db_instance.default.name,
       "username" = aws_db_instance.default.username,
-      # !!! Remember to find a secure way to retrieve your password
+      # !!! Remember to find a secure way to retrieve your password.
+      # In our proposal, we are using path as Enviroment Variable, in HashiCorp workspace
       "password"  = var.mysql_password,
       "admin_url" = "${aws_lb.nordcloud_aelb.dns_name}",
       "url"       = "${aws_lb.nordcloud_aelb.dns_name}"
@@ -88,6 +89,16 @@ resource "aws_security_group" "nordcloud_asg_sg" {
     protocol    = "tcp"
     # Security group that will be used by the ALB, see alb.tf
     security_groups = [aws_security_group.nordcloud_aelb_sg.id]
+  }
+
+  ingress {
+    description = "Ingress rule for https"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    #Security group that will be used by the ALB, see alb.tf
+    security_groups = [aws_security_group.nordcloud_aelb_sg.id]
+
   }
 
   ingress {
