@@ -20,7 +20,7 @@ resource "aws_iam_role" "ec2_role_east1" {
             "Sid": ""
         }
     ]
-}
+}  
 EOF
 }
 
