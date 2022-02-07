@@ -3,7 +3,7 @@ resource "aws_s3_bucket" "observability_bucket_nginx" {
   acl    = "private"
 
   tags = {
-    Name        = "Observability Nginx NordCloud"
+    Name = "Observability Nginx NordCloud"
   }
 }
 
@@ -12,6 +12,6 @@ resource "aws_s3_bucket" "observability_bucket_ghost" {
   acl    = "private"
 
   tags = {
-    Name        = "Observability NordCloud"
+    Name = "Observability NordCloud"
   }
 }
