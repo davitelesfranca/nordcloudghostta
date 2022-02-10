@@ -30,9 +30,9 @@ resource "aws_launch_configuration" "nordcloud_lc" {
       "username" = aws_db_instance.default.username,
       # !!! Remember to find a secure way to retrieve your password.
       # In our proposal, we are using path as Enviroment Variable, in HashiCorp workspace
-      "password"  = var.mysql_password,
-      "admin_url" = "${aws_lb.nordcloud_aelb.dns_name}",
-      "url"       = "${aws_lb.nordcloud_aelb.dns_name}",
+      "password"         = var.mysql_password,
+      "admin_url"        = "${aws_lb.nordcloud_aelb.dns_name}",
+      "url"              = "${aws_lb.nordcloud_aelb.dns_name}",
       "bucket_s3_object" = "${aws_s3_bucket_object.script_file.id}",
       "nginx_bucket"     = "${aws_s3_bucket.observability_bucket_nginx.id}",
       "ghost_bucket"     = "${aws_s3_bucket.observability_bucket_ghost.id}"

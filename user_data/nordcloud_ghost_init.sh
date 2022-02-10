@@ -57,7 +57,7 @@ exec > >(tee /var/log/ghost-script.log | logger -t ghost-script -s 2>/dev/consol
 	  service nginx restart && service nginx reload
 
 	  echo "# Set global options" >> /var/local/observability/.vector/config/vector.toml
-    echo "data_dir = \"/var/local/observability/.vector/lib/\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "data_dir = \"/var/local/observability/.vector/config/lib/\"" >> /var/local/observability/.vector/config/vector.toml
     echo "" >> /var/local/observability/.vector/config/vector.toml
     echo "# Ingest data by tailing one or more files" >> /var/local/observability/.vector/config/vector.toml
     echo "[sources.nginx_logs]" >> /var/local/observability/.vector/config/vector.toml
