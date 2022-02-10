@@ -28,3 +28,13 @@ resource "aws_iam_role_policy_attachment" "attach_to_ssm" {
   role       = aws_iam_role.ec2_role_east1.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
+
+resource "aws_iam_role_policy_attachment" "attach_to_s3" {
+  role       = aws_iam_role.ec2_role_east1.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "attach_to_cloud_watch" {
+  role       = aws_iam_role.ec2_role_east1.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchFullAccess"
+}

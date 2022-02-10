@@ -1,12 +1,20 @@
 #!/bin/bash -xe
 
 # Send the output to the console logs and at /var/log/user-data.log
-exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+exec > >(tee /var/log/ghost-script.log | logger -t ghost-script -s 2>/dev/console) 2>&1
+    url=$1;
+    admin_url=$2;
+    endpoint=$3;
+    username=$4;
+    password=$5;
+    database=$6;
+    nginx_bucket=$7;
+    ghost_bucket=$8;
 
     # Update packages
     apt-get update && sudo apt-get upgrade -y
-
-    # Install Nginx
+	
+	  # Install Nginx
     apt-get install -y nginx
     #sudo sed -i 's/# server_names_hash_bucket_size 64/server_names_hash_bucket_size 128/g' /etc/nginx/nginx.conf  
     #sudo sed -i '24s/\#//g' /etc/nginx/nginx.conf
@@ -29,176 +37,170 @@ exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
     sudo -u ubuntu mkdir -p /var/www/blog && cd /var/www/blog
 
     # Install Ghost, cannot be run via root (user data default)
-    sudo -u ubuntu ghost install \
-        --url http://${url} \
-        --admin-url http://${admin_url}/admin \
-        --db mysql \
-        --dbhost ${endpoint} \
-        --dbuser ${username}\
-        --dbpass ${password} \
-        --dbname ${database} \
-        --process systemd \
-        --no-prompt
+    sudo -u ubuntu ghost install --url http://$url --admin-url http://$admin_url/admin --db mysql --dbhost $endpoint --dbuser $username --dbpass $password --dbname $database --process systemd --no-prompt
+    
+    sudo -u ubuntu ghost update --force
+    
+	  #Install vector for observability
+    apt-get install -y net-tools 
+    export HOME=/var/local/observability/
 
-    ghost update --force
-    sudo service nginx restart && sudo service nginx reload
+    chown -R ubuntu:ubuntu /var/local/
+    sudo -u ubuntu mkdir -p /var/local/observability && cd /var/local/observability
+    sudo -u ubuntu curl --proto '=https' --tlsv1.2 -sSf https://sh.vector.dev | bash -s -- -y 
+    chown -R ubuntu:ubuntu /var/local/observability/.vector
 
-   #Install vector for observability
-   cd
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.vector.dev | bash -s -- -y 
+    cp /var/local/observability/.vector/bin/vector /usr/local/bin/
 
-   sudo cp .vector/bin/vector /usr/local/bin/
+    rm -rf /var/local/observability/.vector/config/vector.toml
+    cd /var/local/observability/.vector/config/ && sudo -u ubuntu mkdir -p lib
+	  service nginx restart && service nginx reload
 
-   cd .vector && mkdir lib && cd
+	  echo "# Set global options" >> /var/local/observability/.vector/config/vector.toml
+    echo "data_dir = \"/var/local/observability/.vector/config/lib/\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "# Ingest data by tailing one or more files" >> /var/local/observability/.vector/config/vector.toml
+    echo "[sources.nginx_logs]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type         = \"file\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "include      = [\"/var/log/nginx/*.log\"]    # supports globbing" >> /var/local/observability/.vector/config/vector.toml
+    echo "ignore_older = 86400                         # 1 day" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "# Structure and parse the data" >> /var/local/observability/.vector/config/vector.toml
+    echo "[transforms.nginx_parser]" >> /var/local/observability/.vector/config/vector.toml
+    echo "inputs       = [\"nginx_logs\"]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type         = \"regex_parser\"                # fast/powerful regex" >> /var/local/observability/.vector/config/vector.toml
+    echo "patterns      = ['^(?P<host>[w.]+) - (?P<user>[w]+) (?P<bytes_in>[d]+) [(?P<timestamp>.*)] \"(?P<method>[w]+) (?P<path>.*)\" (?P<status>[d]+) (?P<bytes_out>[d]+)$']" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "# Sample the data to save on cost" >> /var/local/observability/.vector/config/vector.toml
+    echo "[transforms.nginx_sample]" >> /var/local/observability/.vector/config/vector.toml
+    echo "inputs       = [\"nginx_parser\"]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type         = \"sample\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "rate         = 50                            # only keep 50%" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "# Send structured data to a cost-effective long-term storage" >> /var/local/observability/.vector/config/vector.toml
+    echo "[sinks.s3_nginx_archives]" >> /var/local/observability/.vector/config/vector.toml
+    echo "inputs       = [\"nginx_parser\"]             # don't sample for S3" >> /var/local/observability/.vector/config/vector.toml
+    echo "type         = \"aws_s3\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "region       = \"us-east-1\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "bucket       = \"$nginx_bucket\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "key_prefix   = \"nginx-date=%Y-%m-%d\"               # daily partitions, hive friendly format" >> /var/local/observability/.vector/config/vector.toml
+    echo "compression  = \"gzip\"                        # compress final objects" >> /var/local/observability/.vector/config/vector.toml
+    echo "encoding     = \"ndjson\"                      # new line delimited JSON" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "# Ingest" >> /var/local/observability/.vector/config/vector.toml
+    echo "[sources.nginx_logs_cwm]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type = \"file\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "include = [\"/var/log/nginx/*.log\"]" >> /var/local/observability/.vector/config/vector.toml
+    echo "start_at_beginning = true" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "# Structure and parse the data" >> /var/local/observability/.vector/config/vector.toml
+    echo "[transforms.nginx_cwm_regex_parser]" >> /var/local/observability/.vector/config/vector.toml
+    echo "inputs = [\"nginx_logs_cwm\"]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type = \"regex_parser\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "patterns = ['^(?P<host>[\w\.]+) - (?P<user>[\w-]+) \[(?P<timestamp>.*)\] \"(?P<method>[\w]+) (?P<path>.*)\" (?P<status>[\d]+) (?P<bytes_out>[\d]+)$']" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "# Transform into metrics" >> /var/local/observability/.vector/config/vector.toml
+    echo "[transforms.nginx_cwm_to_metric]" >> /var/local/observability/.vector/config/vector.toml
+    echo "inputs = [\"nginx_cwm_regex_parser\"]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type = \"log_to_metric\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "[[transforms.nginx_cwm_to_metric.metrics]]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type = \"counter\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "increment_by_value = true" >> /var/local/observability/.vector/config/vector.toml
+    echo "field = \"bytes_out\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "tags = {method = \"{{method}}\", status = \"{{status}}\"}" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "# Output data" >> /var/local/observability/.vector/config/vector.toml
+    echo "[sinks.nginx_cwm_console_metrics]" >> /var/local/observability/.vector/config/vector.toml
+    echo "inputs = [\"nginx_cwm_to_metric\"]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type = \"console\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "encoding = \"json\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "[sinks.nginx_cwm_console_logs]" >> /var/local/observability/.vector/config/vector.toml
+    echo "inputs = [\"nginx_parser\"]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type = \"console\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "encoding = \"json\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "[sinks.nginx_cloudwatch]" >> /var/local/observability/.vector/config/vector.toml
+    echo "inputs = [\"nginx_cwm_to_metric\"]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type = \"aws_cloudwatch_metrics\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "namespace = \"nginxghost\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "endpoint = \"http://localhost:4566\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "##############################################################" >> /var/local/observability/.vector/config/vector.toml
+    echo "##############################################################" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "# Ingest data by tailing one or more files" >> /var/local/observability/.vector/config/vector.toml
+    echo "[sources.ghost_logs]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type         = \"file\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "include      = [\"/var/www/content/logs/*.log\"]    # supports globbing" >> /var/local/observability/.vector/config/vector.toml
+    echo "ignore_older = 86400                         # 1 day" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "# Structure and parse the data" >> /var/local/observability/.vector/config/vector.toml
+    echo "[transforms.ghost_parser]" >> /var/local/observability/.vector/config/vector.toml
+    echo "inputs       = [\"ghost_logs\"]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type         = \"regex_parser\"                # fast/powerful regex" >> /var/local/observability/.vector/config/vector.toml
+    echo "patterns      = ['^(?P<host>[w.]+) - (?P<user>[w]+) (?P<bytes_in>[d]+) [(?P<timestamp>.*)] \"(?P<method>[w]+) (?P<path>.*)\" (?P<status>[d]+) (?P<bytes_out>[d]+)$']" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "# Sample the data to save on cost" >> /var/local/observability/.vector/config/vector.toml
+    echo "[transforms.ghost_sample]" >> /var/local/observability/.vector/config/vector.toml
+    echo "inputs       = [\"ghost_parser\"]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type         = \"sample\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "rate         = 50                            # only keep 50%" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "# Send structured data to a cost-effective long-term storage" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "[sinks.s3_archives]" >> /var/local/observability/.vector/config/vector.toml
+    echo "inputs       = [\"ghost_parser\"]             # don't sample for S3" >> /var/local/observability/.vector/config/vector.toml
+    echo "type         = \"aws_s3\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "region       = \"us-east-1\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "bucket       = \"$ghost_bucket\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "key_prefix   = \"ghost-app-date=%Y-%m-%d\"               # daily partitions, hive friendly format" >> /var/local/observability/.vector/config/vector.toml
+    echo "compression  = \"gzip\"                        # compress final objects" >> /var/local/observability/.vector/config/vector.toml
+    echo "encoding     = \"ndjson\"                      # new line delimited JSON" >> /var/local/observability/.vector/config/vector.toml
+    echo "[sinks.s3_archives.batch]" >> /var/local/observability/.vector/config/vector.toml
+    echo "max_bytes   = 10000000                      # 10mb uncompressed" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "# Ingest" >> /var/local/observability/.vector/config/vector.toml
+    echo "[sources.ghost_logs_cwm]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type = \"file\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "include = [\"/var/www/blog/content/logs/*.log\"]" >> /var/local/observability/.vector/config/vector.toml
+    echo "start_at_beginning = true" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "# Structure and parse the data" >> /var/local/observability/.vector/config/vector.toml
+    echo "[transforms.ghost_cwm_regex_parser]" >> /var/local/observability/.vector/config/vector.toml
+    echo "inputs = [\"ghost_logs_cwm\"]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type = \"regex_parser\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "patterns = ['^(?P<host>[\w\.]+) - (?P<user>[\w-]+) \[(?P<timestamp>.*)\] \"(?P<method>[\w]+) (?P<path>.*)\" (?P<status>[\d]+) (?P<bytes_out>[\d]+)$']" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "# Transform into metrics" >> /var/local/observability/.vector/config/vector.toml
+    echo "[transforms.ghost_cwm_to_metric]" >> /var/local/observability/.vector/config/vector.toml
+    echo "inputs = [\"ghost_cwm_regex_parser\"]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type = \"log_to_metric\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "[[transforms.ghost_cwm_to_metric.metrics]]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type = \"counter\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "increment_by_value = true" >> /var/local/observability/.vector/config/vector.toml
+    echo "field = \"bytes_out\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "tags = {method = \"{{method}}\", status = \"{{status}}\"}" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "# Output data" >> /var/local/observability/.vector/config/vector.toml
+    echo "[sinks.ghost_cwm_console_metrics]" >> /var/local/observability/.vector/config/vector.toml
+    echo "inputs = [\"ghost_cwm_to_metric\"]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type = \"console\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "encoding = \"json\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "[sinks.ghost_cwm_console_logs]" >> /var/local/observability/.vector/config/vector.toml
+    echo "inputs = [\"ghost_cwm_regex_parser\"]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type = \"console\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "encoding = \"json\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "" >> /var/local/observability/.vector/config/vector.toml
+    echo "[sinks.ghost_cloudwatch]" >> /var/local/observability/.vector/config/vector.toml
+    echo "inputs = [\"ghost_cwm_to_metric\"]" >> /var/local/observability/.vector/config/vector.toml
+    echo "type = \"aws_cloudwatch_metrics\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "namespace = \"appghost\"" >> /var/local/observability/.vector/config/vector.toml
+    echo "endpoint = \"http://localhost:4566\"" >> /var/local/observability/.vector/config/vector.toml
+    chown -R ubuntu:ubuntu /var/local/observability/.vector/config/vector.toml
 
-   rm -rf .vector/config/vector.toml
-
-   cat << EOF > .vector/config/vector.toml
-
-    # Set global options
-    data_dir = "~.vector/lib/"
-
-    # Ingest data by tailing one or more files
-    [sources.nginx_logs]
-    type         = "file"
-    include      = ["/var/log/nginx/*.log"]    # supports globbing
-    ignore_older = 86400                         # 1 day
-
-    # Structure and parse the data
-    [transforms.nginx_parser]
-    inputs       = ["nginx_logs"]
-    type         = "regex_parser"                # fast/powerful regex
-    patterns      = ['^(?P<host>[w.]+) - (?P<user>[w]+) (?P<bytes_in>[d]+) [(?P<timestamp>.*)] "(?P<method>[w]+) (?P<path>.*)" (?P<status>[d]+) (?P<bytes_out>[d]+)$']
-
-    # Sample the data to save on cost
-    [transforms.nginx_sample]
-    inputs       = ["nginx_parser"]
-    type         = "sample"
-    rate         = 50                            # only keep 50%
-
-    # Send structured data to a cost-effective long-term storage
-    [sinks.s3_nginx_archives]
-    inputs       = ["nginx_parser"]             # don't sample for S3
-    type         = "aws_s3"
-    region       = "us-east-1"
-    bucket       = "ob-nginx-ghost-nordcloud"
-    key_prefix   = "nginx-date=%Y-%m-%d"               # daily partitions, hive friendly format
-    compression  = "gzip"                        # compress final objects
-    encoding     = "ndjson"                      # new line delimited JSON
-    [sinks.s3_archives.batch]
-    max_bytes   = 10000000                      # 10mb uncompressed
-
-    # Ingest
-    [sources.nginx_logs_cwm]
-    type = "file"
-    include = ["/var/log/nginx/*.log"]
-    start_at_beginning = true
-
-    # Structure and parse the data
-    [transforms.nginx_cwm_regex_parser]
-    inputs = ["nginx_logs_cwm"]
-    type = "regex_parser"
-    patterns = ['^(?P<host>[\w\.]+) - (?P<user>[\w-]+) \[(?P<timestamp>.*)\] "(?P<method>[\w]+) (?P<path>.*)" (?P<status>[\d]+) (?P<bytes_out>[\d]+)$']
-
-    # Transform into metrics
-    [transforms.nginx_cwm_to_metric]
-    inputs = ["nginx_cwm_regex_parser"]
-    type = "log_to_metric"
-
-    [[transforms.nginx_cwm_to_metric.metrics]]
-    type = "counter"
-    increment_by_value = true
-    field = "bytes_out"
-    tags = {method = "{{method}}", status = "{{status}}"}
-
-    # Output data
-    [sinks.nginx_cwm_console_metrics]
-    inputs = ["nginx_cwm_to_metric"]
-    type = "console"
-    encoding = "json"
-
-    [sinks.nginx_cwm_console_logs]
-    inputs = ["regex_parser"]
-    type = "console"
-    encoding = "json"
-
-    [sinks.nginx_cloudwatch]
-    inputs = ["log_to_metric"]
-    type = "aws_cloudwatch_metrics"
-    namespace = "nginxghost"
-    endpoint = "http://localhost:4566"
-
-    ##############################################################
-    ##############################################################
-
-    # Ingest data by tailing one or more files
-    [sources.ghost_logs]
-    type         = "file"
-    include      = ["/var/www/content/logs/*.log"]    # supports globbing
-    ignore_older = 86400                         # 1 day
-
-    # Structure and parse the data
-    [transforms.ghost_parser]
-    inputs       = ["ghost_logs"]
-    type         = "regex_parser"                # fast/powerful regex
-    patterns      = ['^(?P<host>[w.]+) - (?P<user>[w]+) (?P<bytes_in>[d]+) [(?P<timestamp>.*)] "(?P<method>[w]+) (?P<path>.*)" (?P<status>[d]+) (?P<bytes_out>[d]+)$']
-
-    # Sample the data to save on cost
-    [transforms.ghost_sample]
-    inputs       = ["ghost_parser"]
-    type         = "sample"
-    rate         = 50                            # only keep 50%
-
-    # Send structured data to a cost-effective long-term storage
-    [sinks.s3_archives]
-    inputs       = ["ghost_parser"]             # don't sample for S3
-    type         = "aws_s3"
-    region       = "us-east-1"
-    bucket       = "ob-app-ghost-nordcloud"
-    key_prefix   = "ghost-app-date=%Y-%m-%d"               # daily partitions, hive friendly format
-    compression  = "gzip"                        # compress final objects
-    encoding     = "ndjson"                      # new line delimited JSON
-    [sinks.s3_archives.batch]
-    max_bytes   = 10000000                      # 10mb uncompressed
-
-    # Ingest
-    [sources.ghost_logs_cwm]
-    type = "file"
-    include = ["/var/www/blog/content/logs/*.log"]
-    start_at_beginning = true
-
-    # Structure and parse the data
-    [transforms.ghost_cwm_regex_parser]
-    inputs = ["ghost_logs_cwm"]
-    type = "regex_parser"
-    patterns = ['^(?P<host>[\w\.]+) - (?P<user>[\w-]+) \[(?P<timestamp>.*)\] "(?P<method>[\w]+) (?P<path>.*)" (?P<status>[\d]+) (?P<bytes_out>[\d]+)$']
-
-    # Transform into metrics
-    [transforms.ghost_cwm_to_metric]
-    inputs = ["ghost_cwm_regex_parser"]
-    type = "log_to_metric"
-
-    [[transforms.ghost_cwm_to_metric.metrics]]
-    type = "counter"
-    increment_by_value = true
-    field = "bytes_out"
-    tags = {method = "{{method}}", status = "{{status}}"}
-
-    # Output data
-    [sinks.ghost_cwm_console_metrics]
-    inputs = ["ghost_cwm_to_metric"]
-    type = "console"
-    encoding = "json"
-
-    [sinks.ghost_cwm_console_logs]
-    inputs = ["ghost_cwm_regex_parser"]
-    type = "console"
-    encoding = "json"
-
-    [sinks.ghost_cloudwatch]
-    inputs = ["ghost_cwm_to_metric"]
-    type = "aws_cloudwatch_metrics"
-    namespace = "appghost"
-    endpoint = "http://localhost:4566"
-       
-    EOF
+    vector --config /var/local/observability/.vector/config/vector.toml
