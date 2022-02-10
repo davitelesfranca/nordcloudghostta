@@ -96,7 +96,7 @@ variable "mysql_parameter_group_name" {
 variable "ec2_instance_type" {
   description = "EC2 instance type used for Ghost, only t2 micro is free tier eligible"
   type        = string
-  default     = "t2.micro"
+  default     = "t3.medium"
 }
 
 variable "asg_max_size" {

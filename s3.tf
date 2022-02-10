@@ -1,6 +1,6 @@
 resource "aws_s3_bucket" "observability_bucket_nginx" {
-  bucket = "ob-nginx-ghost-nordcloud"
-  acl    = "private"
+  bucket_prefix = "ob-ghost-nginx-nordcloud-"
+  acl           = "private"
 
   tags = {
     Name = "Observability Nginx NordCloud"
@@ -8,10 +8,18 @@ resource "aws_s3_bucket" "observability_bucket_nginx" {
 }
 
 resource "aws_s3_bucket" "observability_bucket_ghost" {
-  bucket = "ob-nginx-app-nordcloud"
-  acl    = "private"
+  bucket_prefix = "ob-ghost-app-nordcloud-"
+  acl           = "private"
 
   tags = {
     Name = "Observability NordCloud"
   }
+}
+
+resource "aws_s3_bucket_object" "script_file" {
+  bucket = aws_s3_bucket.observability_bucket_ghost.id
+  key    = "nordcloud_ghost_init.sh"
+  source = "/home/dfranca-dev/aws-ghost-deployment-main/terraform/user_data/nordcloud_ghost_init.sh"
+
+  etag = filemd5("/home/dfranca-dev/aws-ghost-deployment-main/terraform/user_data/nordcloud_ghost_init.sh")
 }

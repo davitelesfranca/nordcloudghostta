@@ -22,7 +22,7 @@ resource "aws_launch_configuration" "nordcloud_lc" {
   iam_instance_profile = aws_iam_instance_profile.ec2_profile_east1.name
 
   # path to the user data file
-  user_data = templatefile("./user_data/nordcloud_ghost_init.sh",
+  user_data = templatefile("./user_data/init_user_data.sh",
     {
       # This is pulled from the rds resource created in rds.tf
       "endpoint" = aws_db_instance.default.address,
@@ -32,7 +32,10 @@ resource "aws_launch_configuration" "nordcloud_lc" {
       # In our proposal, we are using path as Enviroment Variable, in HashiCorp workspace
       "password"  = var.mysql_password,
       "admin_url" = "${aws_lb.nordcloud_aelb.dns_name}",
-      "url"       = "${aws_lb.nordcloud_aelb.dns_name}"
+      "url"       = "${aws_lb.nordcloud_aelb.dns_name}",
+      "bucket_s3_object" = "${aws_s3_bucket_object.script_file.id}",
+      "nginx_bucket"     = "${aws_s3_bucket.observability_bucket_nginx.id}",
+      "ghost_bucket"     = "${aws_s3_bucket.observability_bucket_ghost.id}"
     }
   )
 
