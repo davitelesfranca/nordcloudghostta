@@ -110,3 +110,13 @@ variable "asg_min_size" {
   type        = string
   default     = 1
 }
+
+/*--------------------------------------------------------------------------------------------------
+  ELK
+--------------------------------------------------------------------------------------------------*/
+
+variable "elk_instance_type" {
+  description = "ELK instance type used for Vector send logs"
+  type        = string
+  default     = "t3.small.elasticsearch"
+}
