@@ -34,8 +34,6 @@ resource "aws_cloudwatch_metric_alarm" "ec2_cpu_down" {
 
   dimensions = {
     InstanceId = aws_launch_configuration.nordcloud_lc.id
-
-
   }
 
   alarm_actions = ["${aws_autoscaling_policy.autopolicy_down.arn}"]
