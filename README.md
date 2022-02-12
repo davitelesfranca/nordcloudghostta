@@ -74,7 +74,7 @@ This open the space to add unit tests, integration tests, smoke tests, regressio
 (...)
                 
 ## Issues
-- Changes ELB from HTTP to HTTPS;
+- Changes ELB from HTTP to HTTPS only;
 - Update the terraform AWS ELK configuration to AWS OpenSearch. Recently, AWS changes the service. So, connection between vector and terraform needs a review;
 - IAM rules are too general. So, needing to add more filters and parameters to determine only which each resource really need to access;
 - Create a version of this system to works with K8S and helm charts:
