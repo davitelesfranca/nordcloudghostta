@@ -62,17 +62,21 @@
    
    
 ## Overview
-        This is a GitOps project for Nord Cloud Technical Assignment. Git is the unique source of truth, where the infrastructure and application are declarative in order to manage them's configuration, continuous integration, and continuous delivery.
+This is a GitOps project for Nord Cloud Technical Assignment. Git is the unique source of truth, where the infrastructure and application are declarative in order to manage them's configuration, continuous integration, and continuous delivery.
 
-        In each Pull Request, we have a set of automatic terraform steps (_init, fmt, validate and plan_) to test and validate the consistense of the requested update. When this phase achieve the success, the merge to the main branch is allowed. When the merge is requested, the terraform _apply_ is activated. Git Hub Actions orchestrate all. You can check it on _Actions tab_ or under _.github/workflows/_ directory.
+In each Pull Request, we have a set of automatic terraform steps (_init, fmt, validate and plan_) to test and validate the consistense of the requested update. When this phase achieve the success, the merge to the main branch is allowed. When the merge is requested, the terraform _apply_ is activated. Git Hub Actions orchestrate all. You can check it on _Actions tab_ or under _.github/workflows/_ directory.
 
-        Important, the merge **_only_** will be allowed if the first terraform steps are ok. And, even if the merge is released, the new code only will be merged to _main branch_ if the terraform apply is succeeded. And, with this last step triumphed, the new version of the infrascrutrure and/or the application will automatic deployed to the desired enviroment: production, dev, lab, etc.
+Important, the merge **_only_** will be allowed if the first terraform steps are ok. And, even if the merge is released, the new code only will be merged to _main branch_ if the terraform apply is succeeded. And, with this last step triumphed, the new version of the infrascrutrure and/or the application will automatic deployed to the desired enviroment: production, dev, lab, etc.
 
-        This open the space to add unit tests, integration tests, smoke tests, regression tests, infrascruture test and any other tests that fits in your software development cicle. In our case, is a set of terraform cicle for infrastructure and aplication configuration and validation of changes.
+This open the space to add unit tests, integration tests, smoke tests, regression tests, infrascruture test and any other tests that fits in your software development cicle. In our case, is a set of terraform cicle for infrastructure and aplication configuration and validation of changes.
 
-
+## Enviroment
+(...)
+                
 ## Issues
-        - Changes ELB from HTTP to HTTPS;
-        - Update the terraform AWS ELK configuration to AWS OpenSearch. Recently, AWS changes the service. So, connection between vector and terraform needs a review;
-        - IAM rules are too general. So, needing to add more filters and parameters to determine only what each resource need to acces
+- Changes ELB from HTTP to HTTPS;
+- Update the terraform AWS ELK configuration to AWS OpenSearch. Recently, AWS changes the service. So, connection between vector and terraform needs a review;
+- IAM rules are too general. So, needing to add more filters and parameters to determine only which each resource really need to access;
+- Create a version of this system to works with K8S and helm charts:
+        - Ghost blog offers a community docker image. So, this can be tested and validated through helm charts. Vector already offers a helm deploys option.
       
