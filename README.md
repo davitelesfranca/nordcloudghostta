@@ -25,10 +25,10 @@ To run in our own environment:
 
 
       _#Linux Environment
-      curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-      unzip awscliv2.zip
-      sudo ./aws/install
-      aws --version_
+      - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+      - unzip awscliv2.zip
+      - sudo ./aws/install
+      - aws --version_
       
 4. Configure your AWS Credentials (Access Key ID and Secret Access Key):
 
