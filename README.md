@@ -60,7 +60,10 @@ To run in our own environment:
    
    
   ## Overview
+  This is a GitOps project for Nord Cloud Technical Assignment. Git is the unique source of truth, where the infrastructure and application are declarative in order to manage them's configuration, continuous integration, and continuous delivery.
   
-   
+  In each Pull Request, we have a set of automatic terraform steps (_init, fmt, validate and plan_) to test and validate the consistense of the requested update. When this phase achieve the success, the merge to the main branch is allowed. When the merge is requested, the terraform _apply_ is activated. Git Hub Actions orchestrate all. You can check it on _Actions tab_ or under _.github/workflows/_ directory
+  
+  This open the space to add unit tests, integration tests, smoke tests, regression tests, infrascruture test and any other tests that fits in your cicle. In our case, is a set of terraform cicle for infrastructure and aplication configuration and validation of changes.
          
       
