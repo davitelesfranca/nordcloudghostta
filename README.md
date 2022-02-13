@@ -71,17 +71,18 @@ Important: the merge **_only_** will be allowed if the first terraform steps are
 This open the space to add unit tests, integration tests, smoke tests, regression tests, infrascruture test and any other tests that fits in your software development cicle. In our case, is a set of terraform cicle for infrastructure and aplication configuration and validation of changes.
 
 ## Enviroment
-The proposal environment focous on Infrastructure as a Code - IaC. So, intention is to have the less human interaction as possible. To allow the GitOps, in provider.tf, was define the environment where the terraform code will run to deploy the infrastructure on AWS. We are using Hashicorp Cloud Environment - HCE. Because of it, you need to do the second step on #quichstart section. With this functionality, you can, for example, configure a Azure environment to run the terraform cloud that will provision the infrastructure on AWS (cool, right?). 
+The proposal environment focous on Infrastructure as a Code - IaC. So, intention is to have the less human interaction as possible. To allow the GitOps, in provider.tf, was define the environment where the terraform code will run to deploy the infrastructure on AWS. We are using _**Hashicorp Cloud Environment - HCE**_. Because of it, you need to do the second step on #quichstart section. With this functionality, you can, for example, configure a Azure environment to run the terraform cloud that will provision the infrastructure on AWS (cool, right?). 
 
 So, in HCE, we defined three ENV Variables:
 
-*AWS_ACCESS_KEY_ID: for AWS credentials; 
-*AWS_SECRET_ACCESS_KEY: for AWS credentials;
-*TF_VAR_mysql_password: for RDS password.
+        *AWS_ACCESS_KEY_ID: for AWS credentials; 
+        *AWS_SECRET_ACCESS_KEY: for AWS credentials;
+        *TF_VAR_mysql_password: for RDS password.
 
 The TF and scritps files are named based on the service or functionality that they are configured for. 
 
-- variables.tf
+- variables.tf:
+        *        
         
 
 - provider.tf
@@ -102,4 +103,5 @@ The TF and scritps files are named based on the service or functionality that th
         - Ghost blog offers a community docker image. So, this can be tested and validated through helm charts. Vector already offers a helm deploys option.
 - Evaluate the creation of a single file for security groups rules only. Since we had a few of them spread around of the others files, can be a good idea to manage all of them in a unique source.
 - ENDPoint
+- Multicloud & Multiregion
       
