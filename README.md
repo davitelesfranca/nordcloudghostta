@@ -71,7 +71,25 @@ Important, the merge **_only_** will be allowed if the first terraform steps are
 This open the space to add unit tests, integration tests, smoke tests, regression tests, infrascruture test and any other tests that fits in your software development cicle. In our case, is a set of terraform cicle for infrastructure and aplication configuration and validation of changes.
 
 ## Enviroment
-(...)
+The proposal environment focous on Infrastructure as a Code - IaC. So, intention is to have the less human interaction as possible.  
+
+To allow the GitOp, in provider.tf, was define the environment where the terraform code will run to deploy the infrastructure on AWS
+
+
+
+
+- variables.tf
+        
+
+- provider.tf
+- vpc.tf
+- iam.tf
+- asg.tf
+- alb.tf
+- elf.tf
+- s3.tf
+- cloudwatch.tf
+- user_data/*
                 
 ## Issues
 - Changes ELB from HTTP to HTTPS only;
@@ -79,4 +97,5 @@ This open the space to add unit tests, integration tests, smoke tests, regressio
 - IAM rules are too general. So, needing to add more filters and parameters to determine only which each resource really need to access;
 - Create a version of this system to works with K8S and helm charts:
         - Ghost blog offers a community docker image. So, this can be tested and validated through helm charts. Vector already offers a helm deploys option.
+- Evaluate the creation of a single file for security groups rules only. Since we had a few of them spread around of the others files, can be a good idea to manage all of them in a unique source.
       
