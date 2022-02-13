@@ -66,17 +66,20 @@ This is a GitOps project for Nord Cloud Technical Assignment. Git is the unique 
 
 In each Pull Request, we have a set of automatic terraform steps (_init, fmt, validate and plan_) to test and validate the consistense of the requested update. When this phase achieve the success, the merge to the main branch is allowed. When the merge is requested, the terraform _apply_ is activated. Git Hub Actions orchestrate all. You can check it on _Actions tab_ or under _.github/workflows/_ directory.
 
-Important, the merge **_only_** will be allowed if the first terraform steps are ok. And, even if the merge is released, the new code only will be merged to _main branch_ if the terraform apply is succeeded. And, with this last step triumphed, the new version of the infrascrutrure and/or the application will automatic deployed to the desired enviroment: production, dev, lab, etc.
+Important: the merge **_only_** will be allowed if the first terraform steps are ok. And, even if the merge is released, the new code only will be merged to _main branch_ if the terraform apply is succeeded. And, with this last step triumphed, the new version of the infrascrutrure and/or the application will automatic deployed to the desired enviroment: production, dev, lab, etc.
 
 This open the space to add unit tests, integration tests, smoke tests, regression tests, infrascruture test and any other tests that fits in your software development cicle. In our case, is a set of terraform cicle for infrastructure and aplication configuration and validation of changes.
 
 ## Enviroment
-The proposal environment focous on Infrastructure as a Code - IaC. So, intention is to have the less human interaction as possible.  
+The proposal environment focous on Infrastructure as a Code - IaC. So, intention is to have the less human interaction as possible. To allow the GitOps, in provider.tf, was define the environment where the terraform code will run to deploy the infrastructure on AWS. We are using Hashicorp Cloud Environment - HCE. Because of it, you need to do the second step on #quichstart section. With this functionality, you can, for example, configure a Azure environment to run the terraform cloud that will provision the infrastructure on AWS (cool, right?). 
 
-To allow the GitOp, in provider.tf, was define the environment where the terraform code will run to deploy the infrastructure on AWS
+So, in HCE, we defined three ENV Variables:
 
+*AWS_ACCESS_KEY_ID: for AWS credentials; 
+*AWS_SECRET_ACCESS_KEY: for AWS credentials;
+*TF_VAR_mysql_password: for RDS password.
 
-
+The TF and scritps files are named based on the service or functionality that they are configured for. 
 
 - variables.tf
         
@@ -98,4 +101,5 @@ To allow the GitOp, in provider.tf, was define the environment where the terrafo
 - Create a version of this system to works with K8S and helm charts:
         - Ghost blog offers a community docker image. So, this can be tested and validated through helm charts. Vector already offers a helm deploys option.
 - Evaluate the creation of a single file for security groups rules only. Since we had a few of them spread around of the others files, can be a good idea to manage all of them in a unique source.
+- ENDPoint
       
