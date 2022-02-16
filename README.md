@@ -84,6 +84,8 @@ So, in HCE, we defined three ENV Variables:
 The TF and scritps files are named based on the service or functionality that they are configured for. 
 
 We have this following tree:
+
+
                 .
                 ├── alb.tf
                 ├── asg.tf
