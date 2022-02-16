@@ -60,7 +60,7 @@
            - terraform plan
            - terraform apply
            
-           _**Be careful with the instance type that are set on variable.tf file (lines 99 and 121). This can exceed the free tier limit.**_
+           _**Be careful with the instance type that are setting on variable.tf file (lines 99 and 121). This can exceed the free tier limit.**_
    
    
 ## Overview
@@ -102,19 +102,19 @@ We have this following tree:
         └── vpc.tf
 
 
-- variables.tf:
-        *  Here we find all variables and       
-        
+- variables.tf:Here we find all variables used arround the project;     
+- provider.tf: Has the definition of AWS as the provider and the HCE to run the terraform; 
+- vpc.tf: VPC definitions of public (ELB and Ghost instance) and private networks (RDS);
+- iam.tf: IAM rules to filter access between the AWS services and external access;
+- asg.tf: Auto scalling groups configuration and the EC2 Ghost configuration remains here; *** 
+- alb.tf: Application Load Balancer to balance the traffic of ghost instance within stick session; ***
+- elk.tf: Elastic Static. For the send the vector collected logs;
+- s3.tf: Creating buckets to vector send and storage logs. Plus, we used it to storage scritps;
+- cloudwatch.tf: We instanciate a Cloudwatch to monitor the EC2 instances and to vector send logs too;
+- user_data/: Here we have the initialization scripts: installing ghost prerequisites, install ghost and configure it. Install and configure vector.
 
-- provider.tf
-- vpc.tf
-- iam.tf
-- asg.tf
-- alb.tf
-- elf.tf
-- s3.tf
-- cloudwatch.tf
-- user_data/*
+
+*** 
                 
 ## Issues
 - Changes ELB from HTTP to HTTPS only;
