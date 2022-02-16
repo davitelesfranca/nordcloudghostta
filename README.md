@@ -59,6 +59,8 @@
            - terraform validate
            - terraform plan
            - terraform apply
+           
+           _**Be careful with the instance type that are set on variable.tf file (lines 99 and 121). This can exceed the free tier limit.**_
    
    
 ## Overview
@@ -81,8 +83,27 @@ So, in HCE, we defined three ENV Variables:
 
 The TF and scritps files are named based on the service or functionality that they are configured for. 
 
+We have this following tree:
+        .
+        ├── alb.tf
+        ├── asg.tf
+        ├── cloudwatch.tf
+        ├── elk.tf
+        ├── iam.tf
+        ├── output.tf
+        ├── provider.tf
+        ├── rds.tf
+        ├── README.md
+        ├── s3.tf
+        ├── user_data
+        │   ├── init_user_data.sh
+        │   └── nordcloud_ghost_init.sh
+        ├── variables.tf
+        └── vpc.tf
+
+
 - variables.tf:
-        *        
+        *  Here we find all variables and       
         
 
 - provider.tf
@@ -103,5 +124,6 @@ The TF and scritps files are named based on the service or functionality that th
         - Ghost blog offers a community docker image. So, this can be tested and validated through helm charts. Vector already offers a helm deploys option.
 - Evaluate the creation of a single file for security groups rules only. Since we had a few of them spread around of the others files, can be a good idea to manage all of them in a unique source.
 - ENDPoint
+- Backend file
 - Multicloud & Multiregion
       
