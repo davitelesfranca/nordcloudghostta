@@ -117,9 +117,9 @@ We have the following tree:
 - vpc.tf: VPC definitions of public (ELB and Ghost instance) and private networks (RDS);
 
 
-*** Ghost documentations say: _"Ghost doesn’t support load-balanced clustering or multi-server setups of any description, there should only be one Ghost instance per site."_ https://ghost.org/docs/faq/clustering-sharding-multi-server/
+*** Ghost documentations says: _"Ghost doesn’t support load-balanced clustering or multi-server setups of any description, there should only be one Ghost instance per site."_ https://ghost.org/docs/faq/clustering-sharding-multi-server/
 
-Even with this recomentation, this project was a ALB and ASG, to shows the power and control of IaC. The strategy is to configured Sticky Session on ALB (lines 54 to 57).
+Even with this recomentation, this project was a ALB and ASG, to shows the power and control of IaC to configure high availability. The strategy is to configured Sticky Session on ALB (lines 54 to 57) to maintain sessions through a Ghost instance.
                 
 ## Issues
 - Changes ELB from HTTP to HTTPS only. To do it, is necessary a validate certificate;
@@ -128,7 +128,6 @@ Even with this recomentation, this project was a ALB and ASG, to shows the power
 - Create a version of this system to works with K8S and helm charts:
         * Ghost blog offers a community docker image. So, this can be tested and validated through helm charts. Vector already offers a helm deploys option.
 - Evaluate the creation of a single file for security groups rules only. Since we had a few of them spread around of the others files, can be a good idea to manage all of them in a unique source.
-- ENDPoint
-- Backend file
-- Multicloud & Multiregion
+- Backend file: I didn't forget about you, my friend! In this project, the backend file is saved on HCE. But, is a good option to save a copy of it in a third cloud environment. This third environment can be AWS in another region.
+- Multicloud x Multiregion: is long discussion, but, Multiregion cloud environment can be a good option to provide silient, available, performant, secure and reliability.
       
