@@ -73,7 +73,7 @@ Important: the merge **_only_** will be allowed if the first terraform steps are
 This open the space to add unit tests, integration tests, smoke tests, regression tests, infrascruture test and any other tests that fits in your software development cicle. In our case, is a set of terraform cicle for infrastructure and aplication configuration and validation of changes.
 
 ## Enviroment
-The proposal environment focous on Infrastructure as a Code - IaC. So, intention is to have the less human interaction as possible. To allow the GitOps, in provider.tf, was define the environment where the terraform code will run to deploy the infrastructure on AWS. We are using _**Hashicorp Cloud Environment - HCE**_. Because of it, you need to do the second step on #quichstart section. With this functionality, you can, for example, configure a Azure environment to run the terraform cloud that will provision the infrastructure on AWS (cool, right?). 
+The proposal environment focous on Infrastructure as a Code - IaC. So, intention is to have the less human interaction as possible. To allow the GitOps, in provider.tf, was define the environment where the terraform code will run to deploy the infrastructure on AWS. We are using _**Hashicorp Cloud Environment - HCE**_. Because of it, you need to do the second step on #quickstart section. With this functionality, you can, for example, configure a Azure environment to run the terraform cloud that will provision the infrastructure on AWS (cool, right?). 
 
 So, in HCE, we defined three ENV Variables:
 
@@ -83,8 +83,7 @@ So, in HCE, we defined three ENV Variables:
 
 The TF and scritps files are named based on the service or functionality that they are configured for. 
 
-We have this following tree:
-
+We have the following tree:
 
                 .
                 ├── alb.tf
@@ -104,26 +103,30 @@ We have this following tree:
                 └── vpc.tf
 
 
-- variables.tf:Here we find all variables used arround the project;     
-- provider.tf: Has the definition of AWS as the provider and the HCE to run the terraform; 
-- vpc.tf: VPC definitions of public (ELB and Ghost instance) and private networks (RDS);
-- iam.tf: IAM rules to filter access between the AWS services and external access;
-- asg.tf: Auto scalling groups configuration and the EC2 Ghost configuration remains here; *** 
-- alb.tf: Application Load Balancer to balance the traffic of ghost instance within stick session; ***
-- elk.tf: Elastic Static. For the send the vector collected logs;
-- s3.tf: Creating buckets to vector send and storage logs. Plus, we used it to storage scritps;
-- cloudwatch.tf: We instanciate a Cloudwatch to monitor the EC2 instances and to vector send logs too;
+- alb.tf: _**Application Load Balancer**_ to balance the traffic of ghost instance within stick session; ***
+- asg.tf: **_Auto Scalling Group_** configuration and the EC2 Ghost configuration remains here; *** 
+- cloudwatch.tf: An instance of _**Cloudwatch**_ to monitor the EC2 instances and to vector** send logs to;
+- elk.tf: _**Elastic Stack**_. For the send the vector collected logs;
+- iam.tf: _**IAM**_ rules to filter access between the AWS services and external access;
+- output.tf: prints the desire outputs of the configured infrascructure;
+- provider.tf: Has the definition of AWS as the provider and the HCE to run the terraform;
+- rds.tf: _**Relational Database Service**_. We use it to instantiate a MySQL Server to ghost aplication; 
+- s3.tf: Creating buckets to vector send and storage logs. Plus, we used it to storage scritps;    
 - user_data/: Here we have the initialization scripts: installing ghost prerequisites, install ghost and configure it. Install and configure vector.
+- variables.tf:Here we find all variables used arround the project; 
+- vpc.tf: VPC definitions of public (ELB and Ghost instance) and private networks (RDS);
 
 
-*** 
+*** Ghost documentations say: _"Ghost doesn’t support load-balanced clustering or multi-server setups of any description, there should only be one Ghost instance per site."_ https://ghost.org/docs/faq/clustering-sharding-multi-server/
+
+Even with this recomentation, this project was a ALB and ASG, to shows the power and control of IaC. The strategy is to configured Sticky Session on ALB (lines 54 to 57).
                 
 ## Issues
-- Changes ELB from HTTP to HTTPS only;
+- Changes ELB from HTTP to HTTPS only. To do it, is necessary a validate certificate;
 - Update the terraform AWS ELK configuration to AWS OpenSearch. Recently, AWS changes the service. So, connection between vector and terraform needs a review;
 - IAM rules are too general. So, needing to add more filters and parameters to determine only which each resource really need to access;
 - Create a version of this system to works with K8S and helm charts:
-        - Ghost blog offers a community docker image. So, this can be tested and validated through helm charts. Vector already offers a helm deploys option.
+        * Ghost blog offers a community docker image. So, this can be tested and validated through helm charts. Vector already offers a helm deploys option.
 - Evaluate the creation of a single file for security groups rules only. Since we had a few of them spread around of the others files, can be a good idea to manage all of them in a unique source.
 - ENDPoint
 - Backend file
