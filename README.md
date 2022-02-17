@@ -116,6 +116,7 @@ We have the following tree:
 - variables.tf:Here we find all variables used arround the project; 
 - vpc.tf: VPC definitions of public (ELB and Ghost instance) and private networks (RDS);
 
+** "Vector is a high-performance observability data pipeline that puts organizations in control of their observability data. Collect, transform, and route all your logs, metrics, and traces to any vendors you want today and any other vendors you may want tomorrow." https://vector.dev/docs/about/what-is-vector/
 
 *** Ghost documentations says: _"Ghost doesn’t support load-balanced clustering or multi-server setups of any description, there should only be one Ghost instance per site."_ https://ghost.org/docs/faq/clustering-sharding-multi-server/
 
